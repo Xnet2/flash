@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>פלאש — כל המבזקים, רגע לפני כולם</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Secular+One&family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#ffffff;
+    --bg-tint:#F5F3FF;
+    --ink:#171321;
+    --ink-soft:#6C6678;
+    --ink-faint:#A8A2B5;
+    --line:#ECE8F6;
+    --primary:#5B3DF5;
+    --primary-ink:#4429D6;
+    --c-hagizra:#5B3DF5;
+    --c-kolrega:#FF5A4E;
+    --c-prog:#12B3A8;
+    --c-authentic:#FFB627;
+    --radius-chip:999px;
+    --header-h:64px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Rubik',sans-serif;
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  img{max-width:100%;display:block;}
+  button{font-family:inherit;cursor:pointer;}
+  a{color:var(--primary-ink);}
+
+  :focus-visible{outline:2px solid var(--primary);outline-offset:2px;}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation-duration:0.001ms !important; transition-duration:0.001ms !important;}
+  }
+
+  /* ---------- Header ---------- */
+  .app-header{
+    position:sticky; top:0; z-index:40;
+    height:var(--header-h);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 16px;
+    background:rgba(255,255,255,0.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{
+    display:flex; align-items:center; gap:8px;
+    font-family:'Secular One',sans-serif;
+    font-size:22px;
+    color:var(--ink);
+    white-space:nowrap;
+  }
+  .brand-mark{width:24px;height:24px;flex:none;}
+  .brand-live{
+    width:7px;height:7px;border-radius:50%;
+    background:var(--c-kolrega);
+    display:inline-block;
+    animation:pulse 1.8s ease-in-out infinite;
+    margin-inline-start:2px;
+  }
+  @keyframes pulse{
+    0%,100%{ box-shadow:0 0 0 0 rgba(255,90,78,0.45); }
+    50%{ box-shadow:0 0 0 6px rgba(255,90,78,0); }
+  }
+
+  .switch{
+    display:flex; background:#F1EFFB; border-radius:var(--radius-chip);
+    padding:3px; gap:2px;
+  }
+  .switch-btn{
+    border:none; background:transparent; color:var(--ink-soft);
+    font-weight:600; font-size:14px; padding:8px 16px; border-radius:var(--radius-chip);
+    transition:background .15s ease, color .15s ease;
+  }
+  .switch-btn.active{ background:var(--ink); color:#fff; }
+
+  /* ---------- Layout shells ---------- */
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* ---------- Feed view ---------- */
+  .chips{
+    display:flex; gap:8px; padding:12px 16px;
+    overflow-x:auto; scrollbar-width:none;
+    border-bottom:1px solid var(--line);
+    position:sticky; top:var(--header-h); background:var(--bg); z-index:30;
+  }
+  .chips::-webkit-scrollbar{display:none;}
+  .chip{
+    flex:none;
+    display:flex; align-items:center; gap:6px;
+    padding:6px 14px 6px 10px;
+    border-radius:var(--radius-chip);
+    border:1.5px solid var(--line);
+    background:#fff;
+    font-size:14px; font-weight:600; color:var(--ink-soft);
+    transition:border-color .15s ease, background .15s ease, color .15s ease;
+  }
+  .chip img{width:20px;height:20px;border-radius:50%;object-fit:cover;flex:none;background:#eee;}
+  .chip[aria-pressed="true"]{
+    color:var(--chip-color, var(--primary));
+    border-color:var(--chip-color, var(--primary));
+    background:color-mix(in srgb, var(--chip-color, var(--primary)) 10%, white);
+  }
+
+  #feedView{ background:var(--bg-tint); }
+
+  .feed{
+    max-width:640px; margin:0 auto; padding:14px 12px 56px;
+    display:flex; flex-direction:column; gap:12px;
+  }
+  @keyframes cardIn{
+    from{ opacity:0; transform:translateY(8px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+  .card{
+    display:block;
+    background:var(--bg);
+    padding:16px 18px 18px;
+    border-radius:20px;
+    box-shadow:0 1px 2px rgba(23,19,33,0.04), 0 14px 30px -20px rgba(23,19,33,0.4);
+    position:relative;
+    animation:cardIn .45s cubic-bezier(.2,.7,.2,1) both;
+  }
+  .card::before{
+    content:"";
+    position:absolute; inset-block:14px; inset-inline-start:0;
+    width:3px; border-radius:3px;
+    background:var(--card-color, var(--primary));
+    opacity:.9;
+  }
+  .card-head{
+    display:flex; align-items:center; gap:10px; margin-bottom:10px;
+  }
+  .card-logo{
+    width:36px; height:36px; border-radius:50%; object-fit:cover; flex:none; background:#f2f2f2;
+    box-shadow:0 0 0 2px #fff, 0 0 0 3.5px var(--card-color, var(--primary));
+  }
+  .card-channel{
+    font-weight:700; font-size:14.5px; color:var(--card-color, var(--ink));
+  }
+  .card-time{
+    margin-inline-start:auto;
+    display:flex; align-items:center; gap:5px;
+    font-size:12.5px; color:var(--ink-faint); font-weight:600;
+    white-space:nowrap;
+    background:var(--bg-tint); padding:5px 10px 5px 9px; border-radius:var(--radius-chip);
+  }
+  .card-time svg{width:12px;height:12px;flex:none;}
+  .badge-breaking{
+    font-size:10.5px; font-weight:700; color:#fff; background:var(--c-kolrega);
+    padding:3px 9px; border-radius:var(--radius-chip); flex:none;
+  }
+  .card-time.is-live{ color:var(--c-kolrega); }
+  .card-time .live-dot{
+    width:6px;height:6px;border-radius:50%; background:var(--c-kolrega); flex:none;
+    animation:pulse 1.8s ease-in-out infinite;
+  }
+  .card-body{
+    font-size:16px; line-height:1.68; color:var(--ink);
+    margin:0 0 12px;
+    white-space:pre-line;
+  }
+  .card-body strong{font-weight:700;}
+  .card-media{
+    border-radius:16px; overflow:hidden; margin-bottom:12px; background:#000;
+    border:1px solid rgba(23,19,33,0.06);
+  }
+  .card-media img, .card-media video{width:100%; display:block; max-height:420px; object-fit:cover;}
+
+  .reactions{ display:flex; flex-wrap:wrap; gap:6px; }
+  .reaction-pill{
+    font-size:13px; border-radius:var(--radius-chip);
+    padding:4px 10px; color:var(--ink-soft); font-weight:600;
+    background:color-mix(in srgb, var(--card-color, var(--primary)) 8%, white);
+    border:1px solid color-mix(in srgb, var(--card-color, var(--primary)) 16%, white);
+  }
+
+  .feed-empty{ padding:48px 16px; text-align:center; color:var(--ink-faint); font-size:15px; }
+
+  /* ---------- Shorts view ---------- */
+  .shorts-page{
+    background:var(--bg-tint);
+    min-height:calc(100vh - var(--header-h));
+    display:flex; flex-direction:column; align-items:center;
+    padding:0;
+  }
+  .shorts-frame{
+    position:relative;
+    width:100%; max-width:100%;
+    height:calc(100vh - var(--header-h));
+    background:#0B0A10;
+    overflow:hidden;
+  }
+  .shorts-scroller{
+    height:100%; width:100%;
+    overflow-y:auto;
+    scroll-snap-type:y mandatory;
+    scrollbar-width:none;
+  }
+  .shorts-scroller::-webkit-scrollbar{display:none;}
+  .short-slide{
+    position:relative;
+    height:100%; width:100%;
+    scroll-snap-align:start; scroll-snap-stop:always;
+    display:flex; align-items:flex-end;
+    background:#000;
+  }
+  .short-slide video{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+  }
+  .short-scrim{
+    position:absolute; inset:0;
+    background:linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.15) 38%, rgba(0,0,0,0) 60%);
+    pointer-events:none;
+  }
+  .short-info{
+    position:relative; z-index:2; color:#fff; padding:20px 18px 26px; width:100%;
+  }
+  .short-time{
+    display:inline-flex; align-items:center; gap:5px;
+    font-size:12.5px; font-weight:600; color:rgba(255,255,255,0.85);
+    background:rgba(255,255,255,0.14); padding:4px 10px; border-radius:var(--radius-chip);
+    margin-bottom:10px;
+  }
+  .short-caption{
+    font-size:15px; line-height:1.55; font-weight:500;
+    display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;
+    margin-bottom:10px;
+  }
+  .short-reactions{
+    display:flex; align-items:center; gap:6px; font-size:14px; font-weight:600;
+  }
+  .short-reactions svg{width:18px;height:18px;}
+
+  .mute-btn{
+    position:absolute; top:16px; left:16px; z-index:3;
+    width:38px; height:38px; border-radius:50%;
+    background:rgba(255,255,255,0.14); border:none; color:#fff;
+    display:flex; align-items:center; justify-content:center;
+    backdrop-filter:blur(6px);
+  }
+  .shorts-source{
+    position:absolute; top:16px; right:16px; z-index:3;
+    font-size:12px; font-weight:600; color:rgba(255,255,255,0.75);
+    background:rgba(255,255,255,0.14); padding:5px 11px; border-radius:var(--radius-chip);
+    backdrop-filter:blur(6px);
+  }
+  .shorts-status{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    color:rgba(255,255,255,0.7); font-size:14px; z-index:1;
+  }
+
+  @media (min-width:600px){
+    .shorts-page{ padding:24px 0 40px; }
+    .shorts-frame{
+      max-width:412px; height:calc(100vh - var(--header-h) - 48px); min-height:600px;
+      border-radius:30px;
+      box-shadow:0 24px 60px -20px rgba(23,19,33,0.35);
+      border:8px solid var(--ink);
+    }
+  }
+
+  @media (max-width:420px){
+    .card{padding:14px;}
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <svg class="brand-mark" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="#5B3DF5"/>
+    </svg>
+    פלאש
+    <span class="brand-live" aria-hidden="true"></span>
+  </div>
+  <div class="switch" role="tablist" aria-label="תצוגה">
+    <button class="switch-btn active" role="tab" aria-selected="true" data-view="feed">מבזקים</button>
+    <button class="switch-btn" role="tab" aria-selected="false" data-view="shorts">שורטס</button>
+  </div>
+</header>
+
+<!-- ===================== FEED VIEW ===================== -->
+<section id="feedView" class="view active">
+  <nav class="chips" id="chips" aria-label="סינון לפי ערוץ"></nav>
+  <div class="feed" id="feed"></div>
+</section>
+
+<!-- ===================== SHORTS VIEW ===================== -->
+<section id="shortsView" class="view">
+  <div class="shorts-page">
+    <div class="shorts-frame">
+      <button class="mute-btn" id="muteBtn" aria-label="השתק/בטל השתקה">
+        <svg id="muteIcon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+      </button>
+      <div class="shorts-scroller" id="shortsScroller">
+        <div class="shorts-status" id="shortsStatus">טוען שורטס…</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     CHANNELS — the four sources supplied for the מבזקים feed.
+     ============================================================ */
+  const CHANNELS = [
+    { id:'hagizra',    name:'הגזרה',       color:'var(--c-hagizra)',    logo:'https://www.prog.co.il/media/%D7%9C%D7%95%D7%92%D7%95-%D7%94%D7%92%D7%99%D7%96%D7%A8%D7%94-png.151632/full' },
+    { id:'kolrega',    name:'כל רגע',       color:'var(--c-kolrega)',    logo:'https://play-lh.googleusercontent.com/D9aLDhP5jMU3-j9pCGs8M-czjf0k6Qobga5FOzomvCNLjoRQAKd4rvWOUsMKGmni8ol23Nkha8jWPm6YO1VQbHc=w480-h960-rw' },
+    { id:'prog',       name:'פרוג',         color:'var(--c-prog)',       logo:'https://upload.wikimedia.org/wikipedia/he/e/e3/Proglogo.png' },
+    { id:'authentic',  name:'אותנטי ניוז',  color:'var(--c-authentic)',  logo:'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAA5FBMVEVHcEyMkJlucXnMzc+BhIq/vr/u7u7Ozc+am6Hk5efNzdG1t7o2Njjc3N7Kyc9maGqChIqpqa2Tl52IjZLHyMrFxccDGEABGkACqLEnNVEfL0wuO1b+qGgAATMACzraoHb///4IuL3PgU1cYHJxd4QXKUoAs7jgkViTo6rxoWXP0dSDiI7YiVSRlZzFxcmmub3EdkMQJUfrmV1jkZgJIETDn4u8vsTTpos7oqfd3uCJj5Zmu79fqKzt7u9GUGMAETyllI2ycUqrq7D29fUzrbLrqHaFx8oAAB2of2qw0NKsjX4GrrOhxw33AAAAFnRSTlMA5DZcSSy2cWH+qiEDtOcRkTnAoQo18A3iowAAAfpJREFUOI2Vk2mXmjAUhjPa1kFxli4ExRCUgMiIW3FkERiXcZn+///Tm2Si/dCeM30+5Zz3ubk3gSD0IVqN9hdJs/WX+Ht756ShZOe0Hz9L7i/l2i6bc+I4xsTVCkey0xoi1zWt27GADtDtznGx9gX9Q9HmQrPwrGsOhrXz+wLfF3sUTNZbMvcM8nzgcd73zX2K0I8i/rPeMwzCzrB9vl+vTTN8RPXQk3lX5NgwbPfs57/6/nmfmNM6akw8kRtWac+hHuPKnZp5kh8SEIJbIfDyFA7mEi7YIJgJNMhNKcyhvtKcJ5Y6nQorITHz9VXolg6r8NHZEixb8C0S8yp4zLFig2jPxFCCRAgxTOA50yM5/kuA4+HA0SZp8UzkDD8VQsD8/ISF6Za9C9slZwWEdVTnAr8/TgUdDJu9zWaDwXg4XCwmddRKCc8VIJBoMxuMxxCPei+3CKVuLAMsFbuMIKf09XUkhUYo7g/zvKoqUkanwXhJV5TSnhDQ3VT0hubwXUvG8yGly+VICfrdtqx47kbAG+w/XFC6Wl12QOghgC42CzabzWwmxucjrECIavK/hRu02U1wUseD8eio1+vRDCkBclQLTpdckj0o4Qg5AuNlcI1HNLtRTyPcyuX91yh7UmTZt8vbajb195Ve+6SoXd+eruuX5cce8//wG+/xajx/nc2fAAAAAElFTkSuQmCC' },
+  ];
+  const channelById = Object.fromEntries(CHANNELS.map(c => [c.id, c]));
+
+  /* ============================================================
+     FALLBACK מבזקים — shown immediately (and kept) if every live
+     source below is blocked (e.g. by the browser's CORS policy —
+     see note above LIVE FEED FETCHERS) so the page never shows an
+     empty feed.
+     ============================================================ */
+  const FALLBACK_FEED = [
+    { id:1, channel:'hagizra', time:'2026-09-04T10:42:00', text:'פקק כבד בכביש 1 לכיוון ירושלים בעקבות תאונה קלה בין שני כלי רכב. שוטרי תנועה בזירה, מומלץ לשקול נתיב חלופי.', media:null,
+      reactions:{'👍':14,'😮':3} },
+    { id:2, channel:'kolrega', time:'2026-09-04T09:15:00', text:'עדכון מזג אוויר: גשם ראשון של העונה צפוי הלילה באזור המרכז, לצד ירידה מורגשת בטמפרטורות.', media:{type:'image', url:'https://picsum.photos/seed/rain-tlv/700/460'},
+      reactions:{'☔':22,'👍':9} },
+    { id:3, channel:'prog', time:'2026-09-04T08:50:00', text:'טכנולוגיה: סטארט-אפ ישראלי משיק אפליקציה חדשה לניהול תקציב אישי מבוססת בינה מלאכותית.', media:{type:'video', url:'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'},
+      reactions:{'🔥':31,'👏':6} },
+    { id:4, channel:'authentic', time:'2026-09-04T07:30:00', text:'ספורט: הפועל תל אביב ניצחה 2-1 במשחק גביע מרתק שהוכרע בדקות הסיום.', media:null,
+      reactions:{'⚽':45,'🎉':12} },
+    { id:5, channel:'hagizra', time:'2026-09-04T06:10:00', text:'תקלת חשמל משבשת את תנועת הרכבות בקו החוף, החברה מעדכנת כי הטיפול בעיצומו.', media:null,
+      reactions:{'😡':7,'👍':2} },
+    { id:6, channel:'kolrega', time:'2026-09-03T20:00:00', text:'אירוע קהילתי: יריד אוכל רחוב ייפתח הערב בכיכר העיר, לצד הופעות מוזיקה חיות עד חצות.', media:{type:'image', url:'https://picsum.photos/seed/streetfood/700/460'},
+      reactions:{'😍':18,'🔥':5} },
+    { id:7, channel:'prog', time:'2026-09-03T16:45:00', text:'עדכון בורסה: מדד ת"א 35 נסגר בעלייה קלה של 0.4% במסחר ערני יחסית.', media:null,
+      reactions:{'📈':11} },
+    { id:8, channel:'authentic', time:'2026-09-03T13:20:00', text:'בריאות: משרד הבריאות ממליץ להימנע משהייה ממושכת בשמש בשעות הצהריים בימי החום הקרובים.', media:null,
+      reactions:{'👍':16,'🙏':4} },
+  ];
+
+  let FEED = FALLBACK_FEED;
+
+  /* ============================================================
+     LIVE FEED FETCHERS — ported from the extension's background.js
+     so this page pulls the same four sources (hagizra, kore /
+     "כל רגע", prog, authenti) directly instead of using sample data.
+
+     IMPORTANT CORS NOTE: the extension can read these because a
+     Chrome extension's `host_permissions` let it bypass the
+     browser's cross-origin restrictions. A plain web page has no
+     such privilege — each fetch below only succeeds if that site's
+     server happens to send CORS headers allowing this page's origin.
+     If a source's server doesn't, the browser blocks the response
+     and that fetcher just resolves to an empty list (logged to the
+     console) instead of breaking the rest of the page. If every
+     source is blocked, the feed keeps showing FALLBACK_FEED above.
+     ============================================================ */
+
+  // ---------- hagizra ----------
+  const HAGIZRA_API = 'https://hagizra.news/api/v2/messages?offset=0&limit=20&direction=desc';
+
+  function parseHagizraText(text){
+    text = text || '';
+    let body = text;
+    const quoteMatch = text.match(/^\[quote-embedded#\]\((\d+)@([\s\S]*?)\)\n\n([\s\S]*)$/);
+    if (quoteMatch) body = quoteMatch[3];
+    const media = [];
+    body = body.replace(/\[image-embedded#\]\(([^#\)]+)#[^\)]*\)/g, (m, url) => { media.push({type:'image', url}); return ''; });
+    body = body.replace(/\[video-embedded#\]\(([^#\)]+)#[^\)]*\)/g, (m, url) => { media.push({type:'video', url}); return ''; });
+    return { media, body: body.trim() };
+  }
+
+  async function fetchHagizra(){
+    try{
+      const res = await fetch(HAGIZRA_API);
+      if(!res.ok) { console.warn('[hagizra] not ok:', res.status); return []; }
+      const data = await res.json();
+      return (data.messages || []).map(msg => {
+        const { media, body } = parseHagizraText(msg.text);
+        return {
+          uid: 'hagizra:' + msg.id,
+          channel: 'hagizra',
+          time: msg.timestamp,
+          text: body,
+          media: media[0] || null,
+          reactions: msg.reactions || {},
+          breaking: !!(msg.breakingId && msg.breakingId > 0),
+        };
+      });
+    } catch(e){ console.warn('[hagizra] blocked/failed:', e); return []; }
+  }
+
+  // ---------- authenti news ----------
+  const AUTHENTI_ORIGIN = 'https://authenti.newsupdates.click';
+  const AUTHENTI_CHANNELS_API = AUTHENTI_ORIGIN + '/api/get_channels_optimized.php';
+  const authentiMessagesUrl = (source, lastId, limit) =>
+    `${AUTHENTI_ORIGIN}/api/get_messages_optimized.php?source=${encodeURIComponent(source)}&last_id=${lastId}&limit=${limit}`;
+  const MAX_AUTHENTI_CHANNELS = 15;
+
+  function parseAuthentiText(text){
+    text = text || '';
+    let body = text;
+    if (body.startsWith('\u270f\ufe0f [\u05e2\u05e8\u05d9\u05db\u05d4]\n')) {
+      body = body.slice('\u270f\ufe0f [\u05e2\u05e8\u05d9\u05db\u05d4]\n'.length);
+    } else if (body.startsWith('[\u05e2\u05e8\u05d9\u05db\u05d4]')) {
+      body = body.slice('[\u05e2\u05e8\u05d9\u05db\u05d4]'.length).replace(/^\n+/, '');
+    }
+    const quoteMatch = body.match(/^\u05e6\u05d9\u05d8\u05d5\u05d8: "\u200f([\s\S]+?)\u200f"\n\n/);
+    if (quoteMatch) body = body.slice(quoteMatch[0].length);
+    return body.trim();
+  }
+
+  async function fetchAuthenti(){
+    try{
+      const chRes = await fetch(AUTHENTI_CHANNELS_API);
+      if(!chRes.ok) { console.warn('[authenti] channels not ok:', chRes.status); return []; }
+      const chData = await chRes.json();
+      if(!chData.success || !Array.isArray(chData.channels)) { console.warn('[authenti] unexpected channels payload'); return []; }
+
+      const channels = chData.channels
+        .filter(c => c.source !== 'ALL_CHANNELS' && c.source !== 'APPROVED_VIDEOS')
+        .sort((a, b) => String(a.source).localeCompare(String(b.source)))
+        .slice(0, MAX_AUTHENTI_CHANNELS);
+
+      const perChannel = await Promise.all(channels.map(async (ch) => {
+        try{
+          const msgRes = await fetch(authentiMessagesUrl(ch.source, 0, 20));
+          if(!msgRes.ok) return [];
+          const msgData = await msgRes.json();
+          if(!msgData.success || !Array.isArray(msgData.messages)) return [];
+          return msgData.messages.map(m => {
+            const body = parseAuthentiText(m.description);
+            const title = m.title ? m.title.trim() : '';
+            const text = title && body ? `${title}\n${body}` : (title || body);
+            return {
+              uid: 'authenti:' + m.id,
+              channel: 'authentic',
+              time: m.created_at,
+              text,
+              media: m.image_url ? { type:'image', url: m.image_url } : null,
+              reactions: {},
+              breaking: m.is_breaking == 1 || m.is_breaking === true,
+            };
+          });
+        } catch(e){ return []; }
+      }));
+      return perChannel.flat();
+    } catch(e){ console.warn('[authenti] blocked/failed:', e); return []; }
+  }
+
+  // ---------- prog ----------
+  const PROG_ORIGIN = 'https://www.prog.co.il';
+  const PROG_NEWS_URL = PROG_ORIGIN + '/news/';
+
+  function decodeHtmlEntities(str){
+    if (!str) return '';
+    return str
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&amp;/g, '&')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&#(\d+);/g, (m, code) => String.fromCharCode(Number(code)));
+  }
+
+  function extractBalancedDiv(html, startIdx){
+    let depth = 1;
+    let i = startIdx;
+    while (depth > 0) {
+      const nextOpen = html.indexOf('<div', i);
+      const nextClose = html.indexOf('</div>', i);
+      if (nextClose === -1) return null;
+      if (nextOpen !== -1 && nextOpen < nextClose) { depth++; i = nextOpen + 4; }
+      else { depth--; i = nextClose + 6; }
+    }
+    return { content: html.slice(startIdx, i - 6), endIdx: i };
+  }
+
+  function progHtmlToText(html){
+    let s = html || '';
+    s = s.replace(/<div class="do_not_display">[\s\S]*?<\/div>/gi, '');
+    s = s.replace(/<script[\s\S]*?<\/script>/gi, '');
+    s = s.replace(/<input[^>]*>/gi, '');
+    s = s.replace(/<select[\s\S]*?<\/select>/gi, '');
+    s = s.replace(/<div class="bbMediaWrapper[\s\S]*?<div class="bbMediaWrapper-fallback">[\s\S]*?<\/div>\s*<\/video>\s*<\/div>\s*<\/div>/gi, '');
+    s = s.replace(/<img[^>]*>/gi, '');
+    s = s.replace(/<video[\s\S]*?<\/video>/gi, '');
+    s = s.replace(/<br\s*\/?>/gi, '\n');
+    s = s.replace(/<\/(p|div)>/gi, '\n');
+    s = s.replace(/<(b|strong)[^>]*>([\s\S]*?)<\/\1>/gi, '**$2**');
+    s = s.replace(/<a [^>]*>([\s\S]*?)<\/a>/gi, '$1');
+    s = s.replace(/<[^>]+>/g, '');
+    s = decodeHtmlEntities(s);
+    s = s.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').replace(/^\s+|\s+$/g, '');
+    return s;
+  }
+
+  function extractProgQuote(bodyHtml){
+    const m = bodyHtml.match(/<blockquote[^>]*data-quote="([^"]*)"[\s\S]*?<div class="bbCodeBlock-expandContent[^"]*">([\s\S]*?)<\/div>\s*<div class="bbCodeBlock-expandLink[^>]*>[\s\S]*?<\/div>\s*<\/div>\s*<\/blockquote>/);
+    if (!m) return { body: bodyHtml };
+    const body = bodyHtml.slice(0, m.index) + bodyHtml.slice(m.index + m[0].length);
+    return { body };
+  }
+
+  function extractProgImages(block){
+    const images = [];
+    const galleryRe = /class="js-lbImage-prog"[^>]*data-caption="[^"]*">\s*<img src="([^"]+)"/g;
+    let gm;
+    while ((gm = galleryRe.exec(block))) images.push(gm[1]);
+    if (images.length === 0) {
+      const inlineRe = /<img src="([^"]+)"\s*\n?\s*class="bbImage/g;
+      let im;
+      while ((im = inlineRe.exec(block))) {
+        const src = im[1];
+        if (/\/attachments\/[^/]+\/$/.test(src)) continue;
+        images.push(src.startsWith('http') ? src : PROG_ORIGIN + src);
+      }
+    }
+    return images.map((url) => ({ type: 'image', url }));
+  }
+
+  function extractProgVideo(block){
+    const m = block.match(/data-xf-init="video-init"[\s\S]{0,400}?<source src="([^"]+)"/);
+    return m ? [{ type: 'video', url: m[1] }] : [];
+  }
+
+  function parseProgPost(block){
+    const idMatch = block.match(/id="js-post-(\d+)"/);
+    if (!idMatch) return null;
+    const postId = idMatch[1];
+
+    const threadMatch = block.match(/<a class="structItem-latestDate" href="([^"]+)">([^<]*)<\/a>\s*\/\/\s*<time[^>]*data-time="(\d+)"/);
+    if (!threadMatch) return null;
+    const category = decodeHtmlEntities(threadMatch[2]);
+    const timestamp = Number(threadMatch[3]) * 1000;
+
+    const bbStart = block.indexOf('<div class="bbWrapper">');
+    if (bbStart === -1) return null;
+    const balanced = extractBalancedDiv(block, bbStart + '<div class="bbWrapper">'.length);
+    if (!balanced) return null;
+    const rawBody = balanced.content;
+
+    const { body: bodyMinusQuote } = extractProgQuote(rawBody);
+    const bodyText = progHtmlToText(bodyMinusQuote);
+
+    const media = [...extractProgImages(block), ...extractProgVideo(block)];
+
+    const voteMatch = block.match(/<span class="contentVote-score[^"]*"\s*\n?\s*data-score="(-?\d+)"/);
+    const score = voteMatch ? Number(voteMatch[1]) : 0;
+    const reactions = score > 0 ? { '👍': score } : score < 0 ? { '👎': Math.abs(score) } : {};
+
+    return {
+      uid: 'prog:' + postId,
+      channel: 'prog',
+      time: timestamp,
+      text: bodyText,
+      media: media[0] || null,
+      reactions,
+      breaking: /מבזק/.test(category),
+    };
+  }
+
+  function parseProgHtml(html){
+    const marker = '<article class="message ';
+    const starts = [];
+    let idx = html.indexOf(marker);
+    while (idx !== -1) { starts.push(idx); idx = html.indexOf(marker, idx + marker.length); }
+    const posts = [];
+    for (let i = 0; i < starts.length; i++) {
+      const block = html.slice(starts[i], starts[i + 1] || html.length);
+      try{
+        const post = parseProgPost(block);
+        if (post) posts.push(post);
+      } catch(e){ console.warn('[prog] failed to parse a post block:', e); }
+    }
+    return posts;
+  }
+
+  async function fetchProg(){
+    try{
+      const res = await fetch(PROG_NEWS_URL);
+      if(!res.ok) { console.warn('[prog] not ok:', res.status); return []; }
+      const html = await res.text();
+      return parseProgHtml(html);
+    } catch(e){ console.warn('[prog] blocked/failed:', e); return []; }
+  }
+
+  // ---------- kore "כל רגע" ----------
+  const KORE_API = 'https://www.kore.co.il/api_mplus/mplus/results';
+
+  async function fetchKore(){
+    try{
+      const res = await fetch(KORE_API);
+      if(!res.ok) { console.warn('[kore] not ok:', res.status); return []; }
+      const data = await res.json();
+      const items = (data.data && data.data.items) || [];
+      return items
+        .filter(m => m.is_active !== 0 && (m.short_text || m.title))
+        .map(m => {
+          const title = (m.title || '').trim();
+          const body = (m.short_text || '').trim();
+          const text = title && body ? `${title}\n${body}` : (title || body);
+          return {
+            uid: 'kore:' + m.id,
+            channel: 'kolrega',
+            time: m.date_created,
+            text,
+            media: m.pic_parsed ? { type:'image', url: m.pic_parsed } : null,
+            reactions: {},
+            breaking: false,
+          };
+        });
+    } catch(e){ console.warn('[kore] blocked/failed:', e); return []; }
+  }
+
+  // ---------- merge + poll, same shape as background.js's runPoll() ----------
+  function dedupeAndSortFeed(list){
+    const map = new Map();
+    for (const m of list) map.set(m.uid, m);
+    return Array.from(map.values()).sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+  }
+
+  let feedLoadInFlight = null;
+  function loadFeed(){
+    if (feedLoadInFlight) return feedLoadInFlight;
+    feedLoadInFlight = (async () => {
+      const [hagizra, authenti, prog, kore] = await Promise.all([
+        fetchHagizra(), fetchAuthenti(), fetchProg(), fetchKore()
+      ]);
+      const fresh = [...hagizra, ...authenti, ...prog, ...kore];
+      console.log('[flash] live messages pulled:', fresh.length, { hagizra: hagizra.length, authenti: authenti.length, prog: prog.length, kore: kore.length });
+      if (fresh.length > 0) {
+        FEED = dedupeAndSortFeed(fresh);
+        renderFeed();
+      } else {
+        console.warn('[flash] no live sources returned data (likely blocked by CORS) — keeping fallback feed');
+      }
+    })().finally(() => { feedLoadInFlight = null; });
+    return feedLoadInFlight;
+  }
+
+  function formatSentTime(iso){
+    const d = new Date(iso);
+    const now = new Date();
+    const startOfDay = dt => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+    const diffDays = Math.round((startOfDay(now) - startOfDay(d)) / 86400000);
+    const time = new Intl.DateTimeFormat('he-IL', {hour:'2-digit', minute:'2-digit', timeZone:'Asia/Jerusalem'}).format(d);
+    if(diffDays === 0) return `היום ${time}`;
+    if(diffDays === 1) return `אתמול ${time}`;
+    const date = new Intl.DateTimeFormat('he-IL', {day:'2-digit', month:'2-digit', timeZone:'Asia/Jerusalem'}).format(d);
+    return `${date} ${time}`;
+  }
+
+  const CLOCK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>';
+  const HEART_SVG = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.2-4.6-9.8-9C.6 8.6 2 5 5.3 4.2 7.6 3.7 9.8 4.8 12 7.3c2.2-2.5 4.4-3.6 6.7-3.1C22 5 23.4 8.6 21.8 12c-2.6 4.4-9.8 9-9.8 9Z"/></svg>';
+
+  /* ---------------- Feed rendering ---------------- */
+  const chipsEl = document.getElementById('chips');
+  const feedEl = document.getElementById('feed');
+  let activeChannel = 'all';
+
+  function buildChips(){
+    const all = document.createElement('button');
+    all.className = 'chip';
+    all.setAttribute('aria-pressed', activeChannel === 'all');
+    all.textContent = 'הכל';
+    all.addEventListener('click', () => { activeChannel = 'all'; renderChips(); renderFeed(); });
+    chipsEl.appendChild(all);
+
+    CHANNELS.forEach(ch => {
+      const chip = document.createElement('button');
+      chip.className = 'chip';
+      chip.style.setProperty('--chip-color', ch.color);
+      chip.setAttribute('aria-pressed', activeChannel === ch.id);
+      chip.innerHTML = `<img src="${ch.logo}" alt="" loading="lazy"><span>${ch.name}</span>`;
+      chip.addEventListener('click', () => { activeChannel = ch.id; renderChips(); renderFeed(); });
+      chipsEl.appendChild(chip);
+    });
+  }
+
+  function renderChips(){
+    [...chipsEl.children].forEach((chip, i) => {
+      const id = i === 0 ? 'all' : CHANNELS[i-1].id;
+      chip.setAttribute('aria-pressed', activeChannel === id);
+    });
+  }
+
+  function reactionPills(reactions){
+    return Object.entries(reactions)
+      .sort((a,b) => b[1]-a[1])
+      .map(([emoji,count]) => `<span class="reaction-pill">${emoji} ${count}</span>`)
+      .join('');
+  }
+
+  function escapeAndBold(str){
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    const escaped = div.innerHTML;
+    return escaped.replace(/\*\*([^*]+?)\*\*/g, '<strong>$1</strong>');
+  }
+
+  function renderFeed(){
+    feedEl.innerHTML = '';
+    const items = FEED.filter(it => activeChannel === 'all' || it.channel === activeChannel);
+    if(!items.length){
+      feedEl.innerHTML = '<p class="feed-empty">אין מבזקים בקטגוריה הזו כרגע.</p>';
+      return;
+    }
+    items.forEach((it, i) => {
+      const ch = channelById[it.channel];
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.style.setProperty('--card-color', ch.color);
+      card.style.animationDelay = Math.min(i * 45, 360) + 'ms';
+
+      let mediaHtml = '';
+      if(it.media?.type === 'image'){
+        mediaHtml = `<div class="card-media"><img src="${it.media.url}" alt="" loading="lazy"></div>`;
+      } else if(it.media?.type === 'video'){
+        mediaHtml = `<div class="card-media"><video src="${it.media.url}" controls muted preload="metadata"></video></div>`;
+      }
+
+      const isLive = (Date.now() - new Date(it.time).getTime()) < 60 * 60 * 1000;
+      const timeBadge = isLive
+        ? `<span class="card-time is-live"><span class="live-dot"></span> ${formatSentTime(it.time)}</span>`
+        : `<span class="card-time">${CLOCK_SVG} ${formatSentTime(it.time)}</span>`;
+
+      card.innerHTML = `
+        <div class="card-head">
+          <img class="card-logo" src="${ch.logo}" alt="${ch.name}" loading="lazy">
+          <span class="card-channel">${ch.name}</span>
+          ${it.breaking ? '<span class="badge-breaking">מבזק</span>' : ''}
+          ${timeBadge}
+        </div>
+        <p class="card-body">${escapeAndBold(it.text)}</p>
+        ${mediaHtml}
+        <div class="reactions">${reactionPills(it.reactions)}</div>
+      `;
+      feedEl.appendChild(card);
+    });
+  }
+
+  buildChips();
+  renderFeed();
+  loadFeed();
+  setInterval(loadFeed, 60000); // repoll every minute, like the extension's alarm
+
+  /* ============================================================
+     SHORTS — pulls from the supplied API and shows video items
+     only, TikTok-style vertical snap feed.
+     ============================================================ */
+  const SHORTS_API = 'https://black-cat.thechats.click/api/messages';
+
+  // Fallback dataset (mirrors real items from the API) shown
+  // immediately if the live fetch is blocked (e.g. by CORS) or fails,
+  // so the shorts feed always has something to play.
+  const FALLBACK_SHORTS = [
+    { id:9865, url:'https://cdn.thechats.click/d1/fa/d1fa81d19b5114a07a7b07ee9d1a2704bc719d3c6e9dd1e7aafdd6d120e5139b.mp4', caption:'משמש אחד שנפל', time:'2026-09-04T07:37:34', reactions:{'❤️':93,'😍':31,'😏':10,'😱':15,'🚀':2} },
+    { id:9860, url:'https://cdn.thechats.click/a4/a8/a4a8c21ef83bd41043dca25d900e53521ec1b38a57c98bb95cf42f48f7615e4d.mp4', caption:'אמא שלי תמיד לימדה אותי, תסתכל בצלחת של אחרים', time:'2026-09-04T07:20:34', reactions:{'🍲':3,'😏':3,'🙈':2,'🤣':35,'🥲':1} },
+    { id:9859, url:'https://cdn.thechats.click/74/f4/74f453162be8f72026c3b51a120cf181f4c5b7798cc01eaaf2c27a0b31b58b0f.mp4', caption:'עדות מיוחדת מאיראן', time:'2026-09-03T15:44:32', reactions:{'👻':3,'💔':3,'😱':60,'🤣':27,'🥳':7} },
+    { id:9850, url:'https://cdn.thechats.click/5a/ed/5aed3402170ede11c5e5da083e65231697ff34aebdfcdfb3765df4da52c981ea.mp4', caption:'הבדיחה שזכתה במקום הראשון', time:'2026-09-03T17:08:34', reactions:{'💯':14,'😭':43,'🤣':104,'🥴':134,'🫠':11} },
+    { id:9849, url:'https://cdn.thechats.click/71/5d/715d2b3483e5b14e8b2484092a8e6009386046ff8428921c5a0c90973893e4dd.mp4', caption:'שמחצל?', time:'2026-09-03T16:26:34', reactions:{'🍲':12,'😋':5,'😏':9,'🤣':108,'🫠':2} },
+  ];
+
+  function cleanCaption(text){
+    return text
+      .replace(/\[(image|video|audio)-embedded#\]\([^)]*\)/g, '')
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '$1')
+      .replace(/[*_>#]/g, '')
+      .replace(/\n{2,}/g, '\n')
+      .trim();
+  }
+
+  function totalReactions(reactions){
+    return Object.values(reactions || {}).reduce((a,b) => a+b, 0);
+  }
+
+  async function fetchShorts(){
+    const res = await fetch(SHORTS_API);
+    if(!res.ok) throw new Error('bad response');
+    const data = await res.json();
+    return data
+      .filter(m => !m.deleted && typeof m.text === 'string' && /\[video-embedded#\]\(([^)]+)\)/.test(m.text))
+      .map(m => {
+        const match = m.text.match(/\[video-embedded#\]\(([^)]+)\)/);
+        return {
+          id: m.id,
+          url: match[1],
+          caption: cleanCaption(m.text),
+          time: m.timestamp,
+          reactions: m.reactions || {},
+        };
+      });
+  }
+
+  const scroller = document.getElementById('shortsScroller');
+  const statusEl = document.getElementById('shortsStatus');
+  let shortsLoaded = false;
+  let muted = true;
+
+  function renderShorts(items){
+    scroller.innerHTML = '';
+    items.forEach(item => {
+      const slide = document.createElement('div');
+      slide.className = 'short-slide';
+      slide.innerHTML = `
+        <video src="${item.url}" loop muted playsinline preload="metadata"></video>
+        <div class="short-scrim"></div>
+        <div class="shorts-source">שורטס</div>
+        <div class="short-info">
+          <span class="short-time">${CLOCK_SVG} ${formatSentTime(item.time)}</span>
+          ${item.caption ? `<p class="short-caption">${item.caption}</p>` : ''}
+          <div class="short-reactions">${HEART_SVG} ${totalReactions(item.reactions)}</div>
+        </div>
+      `;
+      scroller.appendChild(slide);
+    });
+
+    const videos = [...scroller.querySelectorAll('video')];
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        const v = entry.target;
+        if(entry.isIntersecting && entry.intersectionRatio > 0.6){
+          v.play().catch(() => {});
+        } else {
+          v.pause();
+        }
+      });
+    }, { root: scroller, threshold: [0, 0.6, 1] });
+    videos.forEach(v => io.observe(v));
+
+    document.getElementById('muteBtn').addEventListener('click', () => {
+      muted = !muted;
+      videos.forEach(v => v.muted = muted);
+      document.getElementById('muteIcon').innerHTML = muted
+        ? '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>'
+        : '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.5 8.5a5 5 0 0 1 0 7"></path><path d="M18 6a9 9 0 0 1 0 12"></path>';
+    });
+  }
+
+  async function loadShorts(){
+    if(shortsLoaded) return;
+    try{
+      const items = await fetchShorts();
+      renderShorts(items.length ? items : FALLBACK_SHORTS);
+    } catch(err){
+      renderShorts(FALLBACK_SHORTS);
+    }
+    shortsLoaded = true;
+  }
+
+  /* ---------------- View switching ---------------- */
+  document.querySelectorAll('.switch-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.switch-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+      btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+      const view = btn.dataset.view;
+      document.getElementById('feedView').classList.toggle('active', view === 'feed');
+      document.getElementById('shortsView').classList.toggle('active', view === 'shorts');
+      if(view === 'shorts') loadShorts();
+    });
+  });
+})();
+</script>
+</body>
+</html>
