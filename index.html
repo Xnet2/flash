@@ -375,6 +375,26 @@
      source is blocked, the feed keeps showing FALLBACK_FEED above.
      ============================================================ */
 
+  /* ---------- CORS helper ----------
+     These sources don't send Access-Control-Allow-Origin headers, so a
+     direct browser fetch() is blocked (especially from a local file://
+     page, whose origin is "null" and is rejected by virtually everyone).
+     We try the direct request first (in case the page is ever hosted
+     somewhere that *is* allowed), and if that fails we fall back to a
+     public CORS relay that fetches the URL server-side and hands the
+     response back with permissive headers. Swap CORS_PROXY for your
+     own small proxy if you want this to be reliable long-term — public
+     relays can be slow, rate-limited, or go down. ---------- */
+  const CORS_PROXY = 'https://corsproxy.io/?url=';
+  async function corsFetch(url, opts){
+    try{
+      const res = await fetch(url, opts);
+      return res;
+    } catch(e){
+      return fetch(CORS_PROXY + encodeURIComponent(url), opts);
+    }
+  }
+
   // ---------- hagizra ----------
   const HAGIZRA_API = 'https://hagizra.news/api/v2/messages?offset=0&limit=20&direction=desc';
 
@@ -391,7 +411,7 @@
 
   async function fetchHagizra(){
     try{
-      const res = await fetch(HAGIZRA_API);
+      const res = await corsFetch(HAGIZRA_API);
       if(!res.ok) { console.warn('[hagizra] not ok:', res.status); return []; }
       const data = await res.json();
       return (data.messages || []).map(msg => {
@@ -431,7 +451,7 @@
 
   async function fetchAuthenti(){
     try{
-      const chRes = await fetch(AUTHENTI_CHANNELS_API);
+      const chRes = await corsFetch(AUTHENTI_CHANNELS_API);
       if(!chRes.ok) { console.warn('[authenti] channels not ok:', chRes.status); return []; }
       const chData = await chRes.json();
       if(!chData.success || !Array.isArray(chData.channels)) { console.warn('[authenti] unexpected channels payload'); return []; }
@@ -443,7 +463,7 @@
 
       const perChannel = await Promise.all(channels.map(async (ch) => {
         try{
-          const msgRes = await fetch(authentiMessagesUrl(ch.source, 0, 20));
+          const msgRes = await corsFetch(authentiMessagesUrl(ch.source, 0, 20));
           if(!msgRes.ok) return [];
           const msgData = await msgRes.json();
           if(!msgData.success || !Array.isArray(msgData.messages)) return [];
@@ -598,7 +618,7 @@
 
   async function fetchProg(){
     try{
-      const res = await fetch(PROG_NEWS_URL);
+      const res = await corsFetch(PROG_NEWS_URL);
       if(!res.ok) { console.warn('[prog] not ok:', res.status); return []; }
       const html = await res.text();
       return parseProgHtml(html);
@@ -796,7 +816,7 @@
   }
 
   async function fetchShorts(){
-    const res = await fetch(SHORTS_API);
+    const res = await corsFetch(SHORTS_API);
     if(!res.ok) throw new Error('bad response');
     const data = await res.json();
     return data
